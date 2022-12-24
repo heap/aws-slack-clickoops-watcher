@@ -16,9 +16,11 @@ resource "aws_lambda_function" "func" {
 
   environment {
     variables = {
-      WEBHOOK_PARAMETER = aws_ssm_parameter.slack_webhook.name
-      EXCLUDED_ACCOUNTS = jsonencode(var.excluded_accounts)
-      INCLUDED_ACCOUNTS = jsonencode(var.included_accounts)
+      WEBHOOK_PARAMETER     = aws_ssm_parameter.slack_webhook.name
+      DATADOG_API_PARAMETER = aws_ssm_parameter.datadog_api.name
+      DATADOG_APP_PARAMETER = aws_ssm_parameter.datadog_app.name
+      EXCLUDED_ACCOUNTS     = jsonencode(var.excluded_accounts)
+      INCLUDED_ACCOUNTS     = jsonencode(var.included_accounts)
     }
   }
 }
@@ -39,6 +41,36 @@ resource "aws_ssm_parameter" "slack_webhook" {
 
   name        = "/${local.naming_prefix}/slack-webhook"
   description = "Slack Incomming Webhook. https://api.slack.com/messaging/webhooks"
+
+  type  = "SecureString"
+  value = "REPLACE_ME"
+
+  lifecycle {
+    ignore_changes = [
+      value,
+    ]
+  }
+}
+
+resource "aws_ssm_parameter" "datadog_api" {
+
+  name        = "/${local.naming_prefix}/datadog_api"
+  description = "Datadog api key for pushing metrics. https://docs.datadoghq.com/account_management/api-app-keys/"
+
+  type  = "SecureString"
+  value = "REPLACE_ME"
+
+  lifecycle {
+    ignore_changes = [
+      value,
+    ]
+  }
+}
+
+resource "aws_ssm_parameter" "datadog_app" {
+
+  name        = "/${local.naming_prefix}/datadog_app"
+  description = "Datadog app key for pushing metrics. https://docs.datadoghq.com/account_management/api-app-keys/"
 
   type  = "SecureString"
   value = "REPLACE_ME"

@@ -6,6 +6,7 @@ import io
 import gzip
 import re
 import os
+import time
 from botocore.vendored import requests
 
 s3 = boto3.client('s3')
@@ -78,11 +79,17 @@ READONLY_EVENTS_RE = [
     "^Head",
 ]
 
-WEBHOOK_PARAMETER = os.environ['WEBHOOK_PARAMETER']
+WEBHOOK_PARAMETER     = os.environ['WEBHOOK_PARAMETER']
+DATADOG_API_PARAMETER = os.environ['DATADOG_API_PARAMETER']
+DATADOG_APP_PARAMETER = os.environ['DATADOG_APP_PARAMETER']
+
 EXCLUDED_ACCOUNTS = json.loads(os.environ['EXCLUDED_ACCOUNTS'])
 INCLUDED_ACCOUNTS = json.loads(os.environ['INCLUDED_ACCOUNTS'])
 
 WEBHOOK_URL = None
+DATADOG_API = None
+DATADOG_APP = None
+
 
 def get_wekbhook() -> str:
     global WEBHOOK_URL
@@ -91,6 +98,22 @@ def get_wekbhook() -> str:
         WEBHOOK_URL = response['Parameter']['Value']
 
     return WEBHOOK_URL
+
+def get_datadog_api() -> str:
+    global DATADOG_API
+    if DATADOG_API is None:
+        response = ssm.get_parameter(Name=DATADOG_API_PARAMETER, WithDecryption=True)
+        DATADOG_API = response['Parameter']['Value']
+
+    return DATADOG_API
+
+def get_datadog_app() -> str:
+    global DATADOG_APP
+    if DATADOG_APP is None:
+        response = ssm.get_parameter(Name=DATADOG_APP_PARAMETER, WithDecryption=True)
+        DATADOG_APP = response['Parameter']['Value']
+
+    return DATADOG_APP
 
 def send_slack_message(user, event, s3_bucket, s3_key, webhook) -> bool:
     slack_payload = {
@@ -166,6 +189,28 @@ def send_slack_message(user, event, s3_bucket, s3_key, webhook) -> bool:
     if response.status_code != 200:
         return False
     return True
+
+def post_datadog_metric(metric_name, value, api, app, tags=None):
+    # Set the API endpoint and headers
+    endpoint = 'https://api.datadoghq.com/api/v2/series'
+    headers = {
+        'Content-Type': 'application/json',
+        'DD-API-KEY': api,
+        'DD-APPLICATION-KEY': app
+    }
+
+    # Build the request payload
+    data = {
+        'series': [{
+            'metric': metric_name,
+            'points': [{'value': value,'timestamp': int(time.time())}],
+            'type': 1,
+            'tags': tags
+        }]
+    }
+
+    # Make the request
+    response = requests.post(endpoint, json=data, headers=headers)
 
 def valid_account(key) -> bool:
     if len(EXCLUDED_ACCOUNTS) == 0 and len(INCLUDED_ACCOUNTS) == 0:
@@ -265,6 +310,8 @@ def handler(event, context) -> None:
     # print(json.dumps(event))
 
     webhook_url = get_wekbhook()
+    datadog_api = get_datadog_api()
+    datadog_app = get_datadog_app()
 
     for sqs_record in event['Records']:
         s3_events = json.loads(sqs_record['body'])
@@ -298,6 +345,7 @@ def handler(event, context) -> None:
                     event_json = json.load(fh)
                     output_dict = [record for record in event_json['Records'] if filter_user_events(record)]
                     for item in output_dict:
+                        post_datadog_metric('clickops.matched_event', 1, datadog_api, datadog_app, tags=['environment:productpostion'])
                         user = get_user_email(item['userIdentity']['principalId'])
                         if not send_slack_message(user, item, s3_bucket=bucket, s3_key=key, webhook=webhook_url):
                             print("[ERROR] Slack Message not sent")
