@@ -64,7 +64,9 @@ data "aws_iam_policy_document" "lambda_permissions" {
     ]
 
     resources = [
-      aws_ssm_parameter.slack_webhook.arn
+      aws_ssm_parameter.slack_webhook.arn,
+      aws_ssm_parameter.datadog_api.arn,
+      aws_ssm_parameter.datadog_app.arn
     ]
   }
 
