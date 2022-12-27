@@ -70,7 +70,9 @@ IGNORED_SCOPED_EVENTS = [
     "cloudshell.amazonaws.com:CreateSession",
     "cloudshell.amazonaws.com:PutCredentials",
     "cloudshell.amazonaws.com:SendHeartBeat",
-    "cloudshell.amazonaws.com:CreateEnvironment"
+    "cloudshell.amazonaws.com:CreateEnvironment",
+
+    "trustedadvisor.amazonaws.com:RefreshCheck"
 ]
 READONLY_EVENTS_RE = [
     "^Get",
