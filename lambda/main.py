@@ -347,7 +347,8 @@ def handler(event, context) -> None:
                     event_json = json.load(fh)
                     output_dict = [record for record in event_json['Records'] if filter_user_events(record)]
                     for item in output_dict:
-                        post_datadog_metric('clickops.matched_event', 1, datadog_api, datadog_app, tags=['environment:productpostion'])
+                        eventSource = item['eventSource']
+                        post_datadog_metric('clickops.matched_event', 1, datadog_api, datadog_app, tags=[f'eventsource:{eventSource}'])
                         user = get_user_email(item['userIdentity']['principalId'])
                         if not send_slack_message(user, item, s3_bucket=bucket, s3_key=key, webhook=webhook_url):
                             print("[ERROR] Slack Message not sent")
