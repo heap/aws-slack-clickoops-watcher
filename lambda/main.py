@@ -73,8 +73,11 @@ IGNORED_SCOPED_EVENTS = [
     "cloudshell.amazonaws.com:SendHeartBeat",
     "cloudshell.amazonaws.com:CreateEnvironment",
 
-    "trustedadvisor.amazonaws.com:RefreshCheck"
-]
+    "trustedadvisor.amazonaws.com:RefreshCheck",
+
+    "support:AddCommunicationToCase",
+    "support:CreateCase"
+]"
 READONLY_EVENTS_RE = [
     "^Get",
     "^Describe",
