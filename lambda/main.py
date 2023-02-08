@@ -15,7 +15,8 @@ ssm = boto3.client('ssm')
 USER_AGENTS = {
     "console.amazonaws.com", 
     "Coral/Jakarta", 
-    "Coral/Netty4"
+    "Coral/Netty4",
+    "AWS Internal"
 }
 USER_AGENTS_RE = [
     "signin.amazonaws.com(.*)",
